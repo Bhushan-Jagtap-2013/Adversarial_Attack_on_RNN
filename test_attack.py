@@ -69,7 +69,7 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
 if __name__ == "__main__":
     with tf.Session() as sess:
         data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
-        attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0)
+        attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0, targeted=False)
 
         inputs, targets = generate_data(data, samples=1, targeted=False,
                                         start=0, inception=False)
