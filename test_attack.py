@@ -79,14 +79,15 @@ if __name__ == "__main__":
         adv = attack.attack(inputs, targets)
         timeend = time.time()
 
-        print("Took",timeend-timestart,"seconds to run",len(inputs),"samples.")
-
-        # for i in range(len(adv)):
-        #     print("Valid:")
-        #     print(inputs[i])
-        #     print("Adversarial:")
-        #     print(adv[i])
-        #
-        #     print("Classification:", model.model.predict(adv[i:i+1]))
-        #
-        #     print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)
+        for i in range(len(adv)):
+            print("Valid:")
+            input = inputs[i]
+            input = np.reshape(input, (input.shape[0], -1))
+            print(inputs)
+            print("Adversarial:")
+            attack_input = adv[i]
+            attack_input = np.reshape(attack_input, (attack_input.shape[0], -1))
+            print(adv)
+            
+            print("adv Classification:", model.model.predict(adv[i:i+1]))
+            print("original Classification:", model.model.predict(adv[i:i + 1]))

@@ -64,9 +64,11 @@ iterations = 100000
 def getTrainBatch():
     ids = np.load('idsMatrix.npy')
     N = ids.shape[0]
-    b = np.zeros((N, maxSeqLength), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
+    #print(ids.shape)
+    labels = []
     print(ids.shape)
     labels = []
     arr = np.zeros([batchSize, maxSeqLength])
@@ -84,7 +86,7 @@ def getTrainBatch():
 def getTestBatch():
     ids = np.load('idsMatrix.npy')
     N = ids.shape[0]
-    b = np.zeros((N, 256), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
     #print(ids.shape)

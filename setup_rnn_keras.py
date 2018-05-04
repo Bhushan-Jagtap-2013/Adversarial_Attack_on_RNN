@@ -30,12 +30,18 @@ iterations = 100000
 
 def getTrainBatch():
     ids = np.load('idsMatrix.npy')
+
     print(np.amax(ids))
+    max_value = np.amax(ids)
+    # added preprocessing same as MNIST as we need all values in rage of 0 to 1
+    ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5
+    ids = ids2
     N = ids.shape[0]
-    b = np.zeros((N, maxSeqLength), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
-    print(ids.shape)
+    #print(ids.shape)
+
     labels = []
     arr = np.zeros([batchSize, maxSeqLength])
     for i in range(batchSize):
@@ -106,11 +112,10 @@ class RNNModel:
                       optimizer='adam',
                       metrics=['accuracy'])
         model.load_weights("models/model.h5")
+
         self.model = model
 
     def predict(self, data):
         return self.model(data)
 
-#d = RNN()
-#print(d.test_data.shape)
 
