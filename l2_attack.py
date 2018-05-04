@@ -85,7 +85,9 @@ class CarliniL2:
         self.newimg = tf.tanh(modifier + self.timg) * self.boxmul + self.boxplus
         
         # prediction BEFORE-SOFTMAX of the model
-        self.output = model.predict(self.newimg)
+        #self.output = model.predict(self.newimg)
+        self.pass_to_model = self.newimg * 399999
+        self.output = model.predict(self.pass_to_model)
         
         # distance to the input data
         self.l2dist = tf.reduce_sum(tf.square(self.newimg-(tf.tanh(self.timg) * self.boxmul + self.boxplus)),[1,2,3])

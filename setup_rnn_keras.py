@@ -30,12 +30,18 @@ iterations = 100000
 
 def getTrainBatch():
     ids = np.load('idsMatrix.npy')
+
     print(np.amax(ids))
+    max_value = np.amax(ids)
+    # added preprocessing same as MNIST as we need all values in rage of 0 to 1
+    ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5
+    ids = ids2
     N = ids.shape[0]
-    b = np.zeros((N, maxSeqLength), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
-    print(ids.shape)
+    #print(ids.shape)
+
     labels = []
     arr = np.zeros([batchSize, maxSeqLength])
     for i in range(batchSize):
@@ -58,7 +64,7 @@ def getTestBatch():
     ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5
     ids = ids2
     N = ids.shape[0]
-    b = np.zeros((N, 256), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
     #print(ids.shape)
@@ -91,7 +97,7 @@ class RNNModel:
         max_features = 400000
         maxlen = 256  # cut texts after this number of words (among top max_features most common words)
 
-        K.set_learning_phase(False)
+        K.set_learning_phase(True)
 
         model = Sequential()
 
@@ -99,6 +105,7 @@ class RNNModel:
         model.add(Reshape((256,), input_shape=(16, 16, 1)))
         model.add(Embedding(max_features, 50))
         model.add(LSTM(50, dropout=0.2, recurrent_dropout=0.2))
+        #model.add(LSTM(50))
         model.add(Dense(1, activation='sigmoid'))
         model.load_weights(restore)
         self.model = model
@@ -106,5 +113,6 @@ class RNNModel:
     def predict(self, data):
         return self.model(data)
 
-d = RNN()
-print(d.test_data.shape)
+data, model = RNN(), RNNModel("models\imdb_model.h5")
+#print(data.test_data.shape)
+#print(model.model.predict(data.test_data))

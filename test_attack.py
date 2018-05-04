@@ -81,10 +81,15 @@ if __name__ == "__main__":
 
         for i in range(len(adv)):
             print("Valid:")
-            print(inputs[i])
+            input = inputs[i]
+            input = np.reshape(input, (input.shape[0], -1))
+            print(inputs)
             print("Adversarial:")
-            print(adv[i])
+            attack_input = adv[i]
+            attack_input = np.reshape(attack_input, (attack_input.shape[0], -1))
+            print(adv)
             
-            print("Classification:", model.model.predict(adv[i:i+1]))
+            print("adv Classification:", model.model.predict(adv[i:i+1]))
+            print("original Classification:", model.model.predict(adv[i:i + 1]))
 
             print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)
