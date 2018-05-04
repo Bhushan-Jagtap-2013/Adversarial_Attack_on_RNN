@@ -52,16 +52,18 @@ def getTrainBatch():
 def getTestBatch():
     ids = np.load('idsMatrix.npy')
 
-    print(np.amax(ids))
-    max_value = np.amax(ids)
+    max_value = np.amax(ids)# are we trying to find max of whole matrix? ids is ndarray type
+    #print(max_value) 399999
     # added preprocessing same as MNIST as we need all values in rage of 0 to 1
-    ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5
+
+    ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5 # normalizing the input string
     ids = ids2
+
     N = ids.shape[0]
-    b = np.zeros((N, 256), dtype=int)
+    b = np.zeros((N, 256), dtype=float)
+    #b[:, :-6] = ids
     b[:ids.shape[0], :ids.shape[1]] = ids
     ids = b
-    #print(ids.shape)
     labels = []
     arr = np.zeros([batchSize, maxSeqLength])
     for i in range(batchSize):
@@ -71,6 +73,7 @@ def getTestBatch():
         else:
             labels.append([0, 1])
         arr[i] = ids[num - 1:num]
+        #print(arr[i])
 
     #print("before reshape", arr[0].astype(int))
     arr = arr.reshape((arr.shape[0], 16, 16, 1))
@@ -91,20 +94,23 @@ class RNNModel:
         max_features = 400000
         maxlen = 256  # cut texts after this number of words (among top max_features most common words)
 
-        K.set_learning_phase(False)
+        K.set_learning_phase(True)
 
         model = Sequential()
-
-        # sequential.add(Reshape((1, maxlen, embedding_size)))
         model.add(Reshape((256,), input_shape=(16, 16, 1)))
         model.add(Embedding(max_features, 50))
-        model.add(LSTM(50, dropout=0.2, recurrent_dropout=0.2))
-        model.add(Dense(1, activation='sigmoid'))
-        model.load_weights(restore)
+        model.add(LSTM(64, dropout=0.2, recurrent_dropout=0.2))
+        model.add(Dense(2, activation='sigmoid'))
+        # try using different optimizers and different optimizer configs
+        model.compile(loss='binary_crossentropy',
+                      optimizer='adam',
+                      metrics=['accuracy'])
+        model.load_weights("models/model.h5")
         self.model = model
 
     def predict(self, data):
         return self.model(data)
 
-d = RNN()
-print(d.test_data.shape)
+#d = RNN()
+#print(d.test_data.shape)
+

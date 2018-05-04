@@ -69,22 +69,24 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
 if __name__ == "__main__":
     with tf.Session() as sess:
         data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
-        attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0, targeted=False)
+
+        attack = CarliniL2(sess, model, batch_size=1, max_iterations=3, confidence=0, targeted=False)
 
         inputs, targets = generate_data(data, samples=1, targeted=False,
-                                        start=0, inception=False)
+                                          start=0, inception=False)
+
         timestart = time.time()
         adv = attack.attack(inputs, targets)
         timeend = time.time()
-        
+
         print("Took",timeend-timestart,"seconds to run",len(inputs),"samples.")
 
-        for i in range(len(adv)):
-            print("Valid:")
-            print(inputs[i])
-            print("Adversarial:")
-            print(adv[i])
-            
-            print("Classification:", model.model.predict(adv[i:i+1]))
-
-            print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)
+        # for i in range(len(adv)):
+        #     print("Valid:")
+        #     print(inputs[i])
+        #     print("Adversarial:")
+        #     print(adv[i])
+        #
+        #     print("Classification:", model.model.predict(adv[i:i+1]))
+        #
+        #     print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)

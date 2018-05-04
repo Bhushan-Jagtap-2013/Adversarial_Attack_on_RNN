@@ -65,9 +65,8 @@ class CarliniL2:
         self.repeat = binary_search_steps >= 10
 
         shape = (batch_size,image_size,image_size,num_channels)
-        
         # the variable we're going to optimize over
-        modifier = tf.Variable(np.zeros(shape,dtype=np.float32))
+        self.modifier = tf.Variable(np.zeros(shape,dtype=np.float32))
 
         # these are variables to be more efficient in sending data to tf
         self.timg = tf.Variable(np.zeros(shape), dtype=tf.float32)
@@ -78,38 +77,42 @@ class CarliniL2:
         self.assign_timg = tf.placeholder(tf.float32, shape)
         self.assign_tlab = tf.placeholder(tf.float32, (batch_size,num_labels))
         self.assign_const = tf.placeholder(tf.float32, [batch_size])
-        
+
         # the resulting image, tanh'd to keep bounded from boxmin to boxmax
         self.boxmul = (boxmax - boxmin) / 2.
         self.boxplus = (boxmin + boxmax) / 2.
-        self.newimg = tf.tanh(modifier + self.timg) * self.boxmul + self.boxplus
-        
+        self.newimg = tf.tanh(self.modifier + self.timg) * self.boxmul + self.boxplus
+
         # prediction BEFORE-SOFTMAX of the model
-        self.output = model.predict(self.newimg)
-        
+        self.before_multi = self.newimg + 0.5
+        self.pass_to_model = self.before_multi * 400000
+        self.output = model.predict(self.pass_to_model)
+        #self.output = model.predict(self.newimg)
+
         # distance to the input data
-        self.l2dist = tf.reduce_sum(tf.square(self.newimg-(tf.tanh(self.timg) * self.boxmul + self.boxplus)),[1,2,3])
-        
+        self.l2dist = tf.reduce_sum(tf.square(self.newimg-tf.tanh(self.timg) * self.boxmul + self.boxplus),[1,2,3])
+
         # compute the probability of the label class versus the maximum other
-        real = tf.reduce_sum((self.tlab)*self.output,1)
-        other = tf.reduce_max((1-self.tlab)*self.output - (self.tlab*10000),1)
+        self.real = tf.reduce_sum((self.tlab)*self.output,1)
+        self.other = tf.reduce_max((1-self.tlab)*self.output - (self.tlab*10000),1)
 
         if self.TARGETED:
             # if targetted, optimize for making the other class most likely
-            loss1 = tf.maximum(0.0, other-real+self.CONFIDENCE)
+            loss1 = tf.maximum(0.0, self.other-self.real+self.CONFIDENCE)
         else:
             # if untargeted, optimize for making this class least likely.
-            loss1 = tf.maximum(0.0, real-other+self.CONFIDENCE)
+            loss1 = tf.maximum(0.0, self.real-self.other+self.CONFIDENCE)
 
         # sum up the losses
         self.loss2 = tf.reduce_sum(self.l2dist)
         self.loss1 = tf.reduce_sum(self.const*loss1)
         self.loss = self.loss1+self.loss2
-        
+
+
         # Setup the adam optimizer and keep track of variables we're creating
         start_vars = set(x.name for x in tf.global_variables())
         optimizer = tf.train.AdamOptimizer(self.LEARNING_RATE)
-        self.train = optimizer.minimize(self.loss, var_list=[modifier])
+        self.train = optimizer.minimize(self.loss, var_list=[self.modifier])
         end_vars = tf.global_variables()
         new_vars = [x for x in end_vars if x.name not in start_vars]
 
@@ -119,7 +122,7 @@ class CarliniL2:
         self.setup.append(self.tlab.assign(self.assign_tlab))
         self.setup.append(self.const.assign(self.assign_const))
         
-        self.init = tf.variables_initializer(var_list=[modifier]+new_vars)
+        self.init = tf.variables_initializer(var_list=[self.modifier]+new_vars)
 
     def attack(self, imgs, targets):
         """
@@ -129,9 +132,7 @@ class CarliniL2:
         If self.targeted is false, then targets are the original class labels.
         """
         r = []
-        print('go up to',len(imgs))
         for i in range(0,len(imgs),self.batch_size):
-            print('tick',i)
             r.extend(self.attack_batch(imgs[i:i+self.batch_size], targets[i:i+self.batch_size]))
         return np.array(r)
 
@@ -155,7 +156,7 @@ class CarliniL2:
         batch_size = self.batch_size
 
         # convert to tanh-space
-        imgs = np.arctanh((imgs - self.boxplus) / self.boxmul * 0.999999)
+        imgs = np.arctanh((imgs - self.boxplus) / self.boxmul * 0.9999999)
 
         # set the lower and upper bounds accordingly
         lower_bound = np.zeros(batch_size)
@@ -166,14 +167,16 @@ class CarliniL2:
         o_bestl2 = [1e10]*batch_size
         o_bestscore = [-1]*batch_size
         o_bestattack = [np.zeros(imgs[0].shape)]*batch_size
+
+        tempBool = False
         
         for outer_step in range(self.BINARY_SEARCH_STEPS):
-            print(o_bestl2)
             # completely reset adam's internal state.
             self.sess.run(self.init)
             batch = imgs[:batch_size]
             batchlab = labs[:batch_size]
-    
+            print(outer_step)
+
             bestl2 = [1e10]*batch_size
             bestscore = [-1]*batch_size
 
@@ -185,17 +188,20 @@ class CarliniL2:
             self.sess.run(self.setup, {self.assign_timg: batch,
                                        self.assign_tlab: batchlab,
                                        self.assign_const: CONST})
-            
-            prev = 1e6
-            for iteration in range(self.MAX_ITERATIONS):
-                # perform the attack 
-                _, l, l2s, scores, nimg = self.sess.run([self.train, self.loss, 
-                                                         self.l2dist, self.output, 
-                                                         self.newimg])
 
-                # print out the losses every 10%
-                if iteration%(self.MAX_ITERATIONS//10) == 0:
-                    print(iteration,self.sess.run((self.loss,self.loss1,self.loss2)))
+            prev = 1e6
+
+            for iteration in range(self.MAX_ITERATIONS):
+                # perform the attack
+                _, l, l2s, scores, nimg,loss1,loss2 = self.sess.run([self.train, self.loss,
+                                                         self.l2dist, self.output,
+                                                         self.newimg,self.loss1,self.loss2])
+
+                print(loss1)
+                print(l)
+                #print out the losses every 10%
+                #if iteration%(self.MAX_ITERATIONS//10) == 0:
+                print(iteration,self.sess.run((self.loss,self.loss1,self.loss2)))
 
                 # check if we should abort search if we're getting nowhere.
                 if self.ABORT_EARLY and iteration%(self.MAX_ITERATIONS//10) == 0:
