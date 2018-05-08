@@ -24,6 +24,7 @@ class CarliniL2:
                  abort_early = ABORT_EARLY, 
                  initial_const = INITIAL_CONST,
                  boxmin = -0.5, boxmax = 0.5):
+        #boxmin = -0.5, boxmax = 0.5):
         """
         The L_2 optimized attack. 
 
@@ -86,7 +87,10 @@ class CarliniL2:
         
         # prediction BEFORE-SOFTMAX of the model
         #self.output = model.predict(self.newimg)
-        self.pass_to_model = self.newimg * 399999
+        self.before_multi = self.newimg + 0.5
+        self.pass_to_model = self.before_multi * 20000
+        #self.pass_it = tf.reshape(self.pass_to_model,[256])
+        #print("SAHPE", tf.shape(self.pass_it))
         self.output = model.predict(self.pass_to_model)
         
         # distance to the input data
@@ -196,8 +200,10 @@ class CarliniL2:
                                                          self.newimg])
 
                 # print out the losses every 10%
-                if iteration%(self.MAX_ITERATIONS//10) == 0:
-                    print(iteration,self.sess.run((self.loss,self.loss1,self.loss2)))
+                #if iteration%(self.MAX_ITERATIONS//10) == 0:
+                print(iteration,self.sess.run((self.output, self.loss,self.loss1,self.loss2)))
+                #print(iteration, self.sess.run((self.loss, self.loss1, self.loss2)))
+
 
                 # check if we should abort search if we're getting nowhere.
                 if self.ABORT_EARLY and iteration%(self.MAX_ITERATIONS//10) == 0:
