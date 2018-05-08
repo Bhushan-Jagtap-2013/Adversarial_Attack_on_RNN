@@ -97,21 +97,27 @@ class RNNModel:
         self.num_channels = 1
         self.image_size = 16
         self.num_labels = 2
-        max_features = 400000
+        max_features = 20000
         maxlen = 256  # cut texts after this number of words (among top max_features most common words)
 
         K.set_learning_phase(True)
 
+        # model = Sequential()
+        # model.add(Reshape((256,), input_shape=(16, 16, 1)))
+        # model.add(Embedding(max_features, 50))
+        # model.add(LSTM(64, dropout=0.2, recurrent_dropout=0.2))
+        # model.add(Dense(2, activation='sigmoid'))
+        # try using different optimizers and different optimizer configs
+        # model.compile(loss='binary_crossentropy',
+        #               optimizer='adam',
+        #               metrics=['accuracy'])
+
         model = Sequential()
         model.add(Reshape((256,), input_shape=(16, 16, 1)))
-        model.add(Embedding(max_features, 50))
-        model.add(LSTM(64, dropout=0.2, recurrent_dropout=0.2))
-        model.add(Dense(2, activation='sigmoid'))
-        # try using different optimizers and different optimizer configs
-        model.compile(loss='binary_crossentropy',
-                      optimizer='adam',
-                      metrics=['accuracy'])
-        model.load_weights("models/model.h5")
+        model.add(Embedding(max_features, 128))
+        model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
+        model.add(Dense(2, activation='softmax'))
+        model.load_weights("models/imdb_model_new.h5")
 
         self.model = model
 

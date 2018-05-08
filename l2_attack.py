@@ -17,6 +17,9 @@ TARGETED = True          # should we target one specific class? or just be wrong
 CONFIDENCE = 0           # how strong the adversarial example should be
 INITIAL_CONST = 1e-3     # the initial constant c to pick as a first guess
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 class CarliniL2:
     def __init__(self, sess, model, batch_size=1, confidence = CONFIDENCE,
                  targeted = TARGETED, learning_rate = LEARNING_RATE,
@@ -66,7 +69,9 @@ class CarliniL2:
 
         shape = (batch_size,image_size,image_size,num_channels)
         # the variable we're going to optimize over
-        self.modifier = tf.Variable(np.zeros(shape,dtype=np.float32))
+        np.random.seed(0)
+        self.modifier = tf.Variable(np.random.randn(batch_size,image_size,image_size,num_channels).astype('float32'))
+        #tf.Variable(np.zeros(shape,dtype=np.float32))
 
         # these are variables to be more efficient in sending data to tf
         self.timg = tf.Variable(np.zeros(shape), dtype=tf.float32)
@@ -85,7 +90,7 @@ class CarliniL2:
 
         # prediction BEFORE-SOFTMAX of the model
         self.before_multi = self.newimg + 0.5
-        self.pass_to_model = self.before_multi * 400000
+        self.pass_to_model = self.before_multi * 19999 #20000
         self.output = model.predict(self.pass_to_model)
         #self.output = model.predict(self.newimg)
 
@@ -98,12 +103,15 @@ class CarliniL2:
 
         if self.TARGETED:
             # if targetted, optimize for making the other class most likely
-            loss1 = tf.maximum(0.0, self.other-self.real+self.CONFIDENCE)
+            temp = self.other-self.real+self.CONFIDENCE
+            loss1 = tf.maximum(0.0, temp)
         else:
             # if untargeted, optimize for making this class least likely.
-            loss1 = tf.maximum(0.0, self.real-self.other+self.CONFIDENCE)
+            temp = self.real-self.other+self.CONFIDENCE
+            loss1 = tf.maximum(0.0, temp)
 
         # sum up the losses
+        self.loss1111 = temp
         self.loss2 = tf.reduce_sum(self.l2dist)
         self.loss1 = tf.reduce_sum(self.const*loss1)
         self.loss = self.loss1+self.loss2
@@ -156,7 +164,7 @@ class CarliniL2:
         batch_size = self.batch_size
 
         # convert to tanh-space
-        imgs = np.arctanh((imgs - self.boxplus) / self.boxmul * 0.9999999)
+        imgs = np.arctanh((imgs - self.boxplus) / self.boxmul * 0.999999)
 
         # set the lower and upper bounds accordingly
         lower_bound = np.zeros(batch_size)
@@ -168,8 +176,6 @@ class CarliniL2:
         o_bestscore = [-1]*batch_size
         o_bestattack = [np.zeros(imgs[0].shape)]*batch_size
 
-        tempBool = False
-        
         for outer_step in range(self.BINARY_SEARCH_STEPS):
             # completely reset adam's internal state.
             self.sess.run(self.init)
@@ -193,15 +199,16 @@ class CarliniL2:
 
             for iteration in range(self.MAX_ITERATIONS):
                 # perform the attack
-                _, l, l2s, scores, nimg,loss1,loss2 = self.sess.run([self.train, self.loss,
+                _, l, l2s, scores, nimg, const = self.sess.run([self.train, self.loss,
                                                          self.l2dist, self.output,
-                                                         self.newimg,self.loss1,self.loss2])
+                                                         self.newimg,self.const])
 
-                print(loss1)
-                print(l)
+                if const >= 1.0:
+                    break
+
                 #print out the losses every 10%
-                #if iteration%(self.MAX_ITERATIONS//10) == 0:
-                print(iteration,self.sess.run((self.loss,self.loss1,self.loss2)))
+                if iteration%(self.MAX_ITERATIONS//10) == 0:
+                    print(iteration,self.sess.run((self.loss,self.loss1,self.loss2,self.loss1111,self.const,self.output)))
 
                 # check if we should abort search if we're getting nowhere.
                 if self.ABORT_EARLY and iteration%(self.MAX_ITERATIONS//10) == 0:
