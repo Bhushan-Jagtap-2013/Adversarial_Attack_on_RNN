@@ -30,7 +30,7 @@ def show(img):
     img = ((img + 0.5) * 20000).astype(int)
     # print(img)
     seq = img.reshape(256)#(img.shape[0], 256))
-    print(seq)
+    print(seq.tolist())
 
 
 def generate_data(data, samples, targeted=True, start=0, inception=False):
@@ -45,6 +45,7 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
     """
     inputs = []
     targets = []
+    print("Targated : ", targeted)
     for i in range(samples):
         if targeted:
             if inception:
@@ -72,9 +73,9 @@ if __name__ == "__main__":
         #data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
         data, model = RNN_Keras(), RNNModel_Keras("models\imdb_model.h5")
 
-        attack = CarliniL2(sess, model, batch_size=2, max_iterations=1000, confidence=0, targeted=False)
+        attack = CarliniL2(sess, model, batch_size=2, max_iterations=1000, confidence=0, targeted=True)
 
-        inputs, targets = generate_data(data, samples=2, targeted=False, start=0, inception=False)
+        inputs, targets = generate_data(data, samples=2, targeted=True, start=0, inception=False)
         #show(inputs)
         timestart = time.time()
         adv = attack.attack(inputs, targets)

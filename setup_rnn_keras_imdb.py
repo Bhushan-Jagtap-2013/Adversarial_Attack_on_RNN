@@ -124,7 +124,7 @@ class RNNModel_Keras:
         model.add(Reshape((256,), input_shape=(16, 16, 1)))
         model.add(Embedding(max_features, 128))
         model.add(LSTM(128))
-        model.add(Dense(2, activation='softmax'))
+        model.add(Dense(2))#, activation='softmax'))
 
 
         model.load_weights(restore)
