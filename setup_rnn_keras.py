@@ -31,7 +31,6 @@ iterations = 100000
 def getTrainBatch():
     ids = np.load('idsMatrix.npy')
 
-    print(np.amax(ids))
     max_value = np.amax(ids)
     # added preprocessing same as MNIST as we need all values in rage of 0 to 1
     ids2 = (ids / (max_value + 1)) - 0.5 #(data / 255) - 0.5

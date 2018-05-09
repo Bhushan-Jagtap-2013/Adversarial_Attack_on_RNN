@@ -67,27 +67,46 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
 
 
 if __name__ == "__main__":
-    with tf.Session() as sess:
-        data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
 
-        attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0, targeted=False)
+    count = 0
+    distortion = []
+    for i in range(25):
+        with tf.Session() as sess:
+            data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
+            attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0, targeted=False)
+            inputs, targets = generate_data(data, samples=1, targeted=False,
+                                                  start=0, inception=False)
 
-        inputs, targets = generate_data(data, samples=1, targeted=False,
-                                          start=0, inception=False)
+            timestart = time.time()
+            adv = attack.attack(inputs, targets)
+            timeend = time.time()
 
-        timestart = time.time()
-        adv = attack.attack(inputs, targets)
-        timeend = time.time()
+            for i in range(len(adv)):
+                # print("Valid:")
+                # input = inputs[i]
+                # input = np.reshape(input, (input.shape[0], -1))
+                # print(inputs)
+                # print("Adversarial:")
+                # attack_input = adv[i]
+                # attack_input = np.reshape(attack_input, (attack_input.shape[0], -1))
+                # print(adv)
 
-        for i in range(len(adv)):
-            print("Valid:")
-            input = inputs[i]
-            input = np.reshape(input, (input.shape[0], -1))
-            print(inputs)
-            print("Adversarial:")
-            attack_input = adv[i]
-            attack_input = np.reshape(attack_input, (attack_input.shape[0], -1))
-            print(adv)
-            
-            print("adv Classification:", model.model.predict(adv[i:i+1]))
-            print("original Classification:", model.model.predict(adv[i:i + 1]))
+                result = model.model.predict(adv[i:i + 1])
+                #print("adv Classification:", result)
+                result2 = result
+                result2[result2 >= 0.5] = 1
+                result2[result2 < 0.5] = 0
+                result2 = result2.astype('int')
+
+                if (result2==targets).all():
+                    count = count
+                else:
+                    count = count + 1
+
+                distortion.append(np.sum((adv[i] - inputs[i]) ** 2) ** .5)
+                #print("original Classification:", model.model.predict(inputs[i:i + 1]))
+                #print("Total distortion:", np.sum((adv[i] - inputs[i]) ** 2) ** .5)
+
+            sess.close()
+    print("Accuracy: ",count/10)
+    print("Avergae distortion: ",np.mean(distortion))
