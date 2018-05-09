@@ -116,7 +116,7 @@ class RNNModel:
         model.add(Embedding(max_features, 128))
         model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
         model.add(Dense(2, activation='softmax'))
-        model.load_weights("models/imdb_model_new.h5")
+        model.load_weights("Temp/models/imdb_model_new.h5")
 
         self.model = model
 
