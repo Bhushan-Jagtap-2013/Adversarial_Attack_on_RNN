@@ -55,45 +55,59 @@ Valid = [8, 134, 14, 50, 218, 6, 1543, 51, 21, 10, 50, 17, 72, 88, 50, 90, 433, 
 Adversarial = [8, 135, 15, 50, 218, 6, 1543, 52, 22, 11, 50, 17, 73, 88, 50, 91, 434, 9, 167, 18316, 1030, 8, 987, 52, 841, 6, 147, 281, 7, 253, 199, 406, 3161, 732, 7, 105, 26, 1451, 4091, 17, 257, 2162, 2712, 68, 205, 732, 7, 4816, 712, 15, 4, 4951, 7, 5512, 15, 36, 26, 1200, 496, 62, 540, 1203, 2536, 3452, 7, 16494, 9, 87, 18, 4, 91, 173, 47, 15, 194, 352, 6713, 44, 12, 33, 44, 2476, 1782, 1782, 13, 144, 440, 38, 4, 64, 155, 15, 13, 80, 135, 9, 15, 49, 7, 4, 5076, 302, 34, 1842, 26, 6, 117, 3463, 2631, 13, 191, 377, 101, 1683, 139, 11, 3452, 7, 16494, 345, 2670, 4, 22, 152, 9185, 4, 541, 599, 19, 6, 646, 12336, 3681, 5573, 15347, 83, 4472, 393, 11, 3532, 6, 14558, 5003, 3490, 84, 13057, 23, 2, 7, 3062, 294, 112, 2, 34, 6, 666, 2832, 6, 3314, 125, 5484, 12317, 998, 2, 13265, 4, 116, 9, 184, 52, 13091, 17, 16494, 9, 55, 163, 17, 29, 14577, 4, 31, 2433, 46, 13, 82, 40, 4, 139, 19, 2, 33, 4, 454, 169, 41, 55, 1279, 54, 442, 1658, 32, 15, 7717, 5745, 13, 191, 30, 4, 64, 31, 1348, 13, 1276, 104, 3452, 7, 16494, 9, 6, 777, 22, 964, 722, 39, 380, 8, 1363, 87, 1285, 189, 11, 3215, 4160, 33, 64, 7304, 234, 196, 12, 115, 461, 357, 42, 753, 6, 965, 1640, 7, 1923, 106, 12, 17, 515, 17, 25, 70]
 
 
-model = Sequential()
-model.add(Reshape((256,), input_shape=(16, 16, 1)))
-model.add(Embedding(max_features, 128))
-model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
-model.add(Dense(2, activation='softmax'))
-model.load_weights("models\imdb_model.h5")
-# model.add(Dense(1, activation='sigmoid'))
-# model.add(Dense(2))
-# model.add(softmax(x, axis=-1))
 
-x_train = np.array(Valid)
-inputs = np.reshape(x_train, (1, 16, 16, 1))
-valid = model.predict_classes(inputs, batch_size=None)
+
+def test_RNN(input_array):
+    print("In TEST RNN")
+    input_array = ((input_array + 0.5) * 20000).astype(int)
+    print(input_array)
+    model = Sequential()
+    model.add(Reshape((256,), input_shape=(16, 16, 1)))
+    model.add(Embedding(max_features, 128))
+    model.add(LSTM(128))#, dropout=0.2, recurrent_dropout=0.2))
+    model.add(Dense(2, activation='softmax'))
+    model.load_weights("models\imdb_model.h5")
+    # model.add(Dense(1, activation='sigmoid'))
+    # model.add(Dense(2))
+    # model.add(softmax(x, axis=-1))
+
+    # x_train = np.array(Valid)
+    # inputs = np.reshape(x_train, (1, 16, 16, 1))
+    results = model.predict_classes(input_array)#, batch_size=2)
+    print(results)
+    return results
 #result = model.predict(inputs, batch_size=None)
 
 
-x_train = np.array(Adversarial)
-inputs = np.reshape(x_train, (1, 16, 16, 1))
-adv = model.predict_classes(inputs, batch_size=None)
+# model = Sequential()
+# model.add(Reshape((256,), input_shape=(16, 16, 1)))
+# model.add(Embedding(max_features, 128))
+# model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
+# model.add(Dense(2, activation='softmax'))
+# model.load_weights("models\imdb_model.h5")
+# x_train = np.array(Adversarial)
+# inputs = np.reshape(x_train, (1, 16, 16, 1))
+# adv = model.predict_classes(inputs, batch_size=None)
 #result = model.predict(inputs, batch_size=None)
-
-print("Valid image classification ", valid)
-print("Adversarial image classification ", adv)
-print(len(set(Valid)&set(Adversarial)))
-
-# # try using different optimizers and different optimizer configs
-# model.compile(loss='binary_crossentropy',
-#               optimizer='adam',
-#               metrics=['accuracy'])
 #
-# print('Train...')
-# model.fit(x_train, y_train,
-#           batch_size=batch_size,
-#           epochs=1,
-#           # epochs=15,
-#           validation_data=(x_test, y_test))
-# score, acc = model.evaluate(x_test, y_test, batch_size=batch_size)
-# print('Test score:', score)
-# print('Test accuracy:', acc)
-
-# model.save_weights("imdb_model.h5")
-# print("Saved model to disk")
+# print("Valid image classification ", valid)
+# print("Classification ", adv)
+# print(len(set(Valid)&set(Adversarial)))
+#
+# # # try using different optimizers and different optimizer configs
+# # model.compile(loss='binary_crossentropy',
+# #               optimizer='adam',
+# #               metrics=['accuracy'])
+# #
+# # print('Train...')
+# # model.fit(x_train, y_train,
+# #           batch_size=batch_size,
+# #           epochs=1,
+# #           # epochs=15,
+# #           validation_data=(x_test, y_test))
+# # score, acc = model.evaluate(x_test, y_test, batch_size=batch_size)
+# # print('Test score:', score)
+# # print('Test accuracy:', acc)
+#
+# # model.save_weights("imdb_model.h5")
+# # print("Saved model to disk")

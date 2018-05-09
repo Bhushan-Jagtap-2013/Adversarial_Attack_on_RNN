@@ -14,6 +14,7 @@ from setup_mnist import MNIST, MNISTModel
 from setup_inception import ImageNet, InceptionModel
 #from setup_rnn_keras import RNN, RNNModel
 from setup_rnn_keras_imdb import RNN_Keras, RNNModel_Keras
+from TestingRNN import test_RNN
 import random
 
 from l2_attack import CarliniL2
@@ -69,13 +70,14 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
 
 
 if __name__ == "__main__":
+    dis = []
     with tf.Session() as sess:
         #data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
         data, model = RNN_Keras(), RNNModel_Keras("models\imdb_model.h5")
 
-        attack = CarliniL2(sess, model, batch_size=2, max_iterations=1000, confidence=0, targeted=True)
+        attack = CarliniL2(sess, model, batch_size=1000, max_iterations=1000, confidence=0, targeted=True)
 
-        inputs, targets = generate_data(data, samples=2, targeted=True, start=0, inception=False)
+        inputs, targets = generate_data(data, samples=1000, targeted=True, start=0, inception=False)
         #show(inputs)
         timestart = time.time()
         adv = attack.attack(inputs, targets)
@@ -91,19 +93,21 @@ if __name__ == "__main__":
 
             print("Original Classification:", model.model.predict(inputs[i:i + 1]))
             print("Adversarial Classification:", model.model.predict(adv[i:i + 1]))
+            distortion = np.sum((adv[i] - inputs[i]) ** 2) ** .5
+            print("Total distortion:", distortion)
+            dis.append(distortion)
+    Original_classification = test_RNN(inputs)
+    Adversarial_classification = test_RNN(adv)
 
-            print("Total distortion:", np.sum((adv[i] - inputs[i]) ** 2) ** .5)
-        # for i in range(len(adv)):
-        #     print("Valid:")
-        #     input = inputs[i]
-        #     input = np.reshape(input, (input.shape[0], -1))
-        #     print(input)
-        #     print("Adversarial:")
-        #     attack_input = adv[i]
-        #     attack_input = np.reshape(attack_input, (attack_input.shape[0], -1))
-        #     print(adv)
-        #
-        #     print("adv Classification:", model.model.predict(adv[i]))
-        #     print("original Classification:", model.model.predict(inputs[i]))
-        #
-        #     print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)
+    print("Original", Original_classification)
+    print("Adv", Adversarial_classification)
+
+    count = 0
+    list1 = Original_classification.tolist()
+    list2 = Adversarial_classification.tolist()
+    for i in range(len(Original_classification)):
+        if (list1[i] != list2[i]):
+            count = count + 1
+    print("Total Number of sample processed", len(Original_classification))
+    print("L2 Accuracy :", count/len(Original_classification))
+    print("Average Distortion", sum(dis)/len(dis))
