@@ -55,7 +55,7 @@ def getTrainBatch():
 
 
 def getTestBatch():
-    ids = np.load('idsMatrix.npy')
+    ids = np.load('Temp/idsMatrix.npy')
 
     max_value = np.amax(ids)# are we trying to find max of whole matrix? ids is ndarray type
     #print(max_value) 399999
