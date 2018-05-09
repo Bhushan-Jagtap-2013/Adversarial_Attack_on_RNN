@@ -70,7 +70,8 @@ if __name__ == "__main__":
 
     count = 0
     distortion = []
-    for i in range(25):
+    testCount = 20
+    for i in range(testCount):
         with tf.Session() as sess:
             data, model = RNN(), RNNModel("models\imdb_model.h5", sess)  #MNIST(), MNISTModel("models/mnist", sess)
             attack = CarliniL2(sess, model, batch_size=1, max_iterations=1000, confidence=0, targeted=False)
@@ -108,5 +109,5 @@ if __name__ == "__main__":
                 #print("Total distortion:", np.sum((adv[i] - inputs[i]) ** 2) ** .5)
 
             sess.close()
-    print("Accuracy: ",count/10)
+    print("Accuracy: ",count/testCount)
     print("Avergae distortion: ",np.mean(distortion))

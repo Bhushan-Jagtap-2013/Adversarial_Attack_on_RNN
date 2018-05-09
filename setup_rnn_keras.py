@@ -55,7 +55,7 @@ def getTrainBatch():
 
 
 def getTestBatch():
-    ids = np.load('Temp/idsMatrix.npy')
+    ids = np.load('idsMatrix.npy')
 
     max_value = np.amax(ids)# are we trying to find max of whole matrix? ids is ndarray type
     #print(max_value) 399999
@@ -116,7 +116,7 @@ class RNNModel:
         model.add(Embedding(max_features, 128))
         model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
         model.add(Dense(2, activation='softmax'))
-        model.load_weights("Temp/models/imdb_model_new.h5")
+        model.load_weights("models/imdb_model_new.h5")
 
         self.model = model
 
