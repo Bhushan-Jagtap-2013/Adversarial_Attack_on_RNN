@@ -14,13 +14,13 @@ This project tries to extend existing C&W attack on Recurrent Neural Network
 #### To create the RNN sentiment analysis models:
 
 ```bash
-python3 Train_RNN_model.py
+    python3 Train_RNN_model.py
 ```
 
 #### To test attack on RNN
 
 ```bash
-python3 test_attack.py
+    python3 test_attack.py
 ```
 
 #### Reference paper
