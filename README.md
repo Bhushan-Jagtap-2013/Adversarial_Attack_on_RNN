@@ -27,3 +27,6 @@ This project tries to extend existing C&W attack on Recurrent Neural Network
 
 Towards Evaluating the Robustness of Neural Networks" by Nicholas Carlini and David Wagner, at IEEE Symposium on Security &
 Privacy, 2017.
+
+https://arxiv.org/pdf/1608.04644.pdf
+https://arxiv.org/pdf/1604.08275.pdf
